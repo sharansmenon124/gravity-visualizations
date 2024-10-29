@@ -2,7 +2,9 @@ import netCDF4 as nc
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import random
 
+random.seed(5)
 # Get data from downloaded file
 file_path = '/Users/kevinfranzblau/Documents/MLDSResearch/grace_data/GRCTellus.JPL.200204_202402.GLO.RL06.1M.MSCNv03CRI.nc'
 dataset = nc.Dataset(file_path, mode='r')
@@ -11,8 +13,13 @@ lon = dataset.variables['lon'][:]
 lat = dataset.variables['lat'][:] 
 lwe = lwe_thickness[0, :, :]  # 0 is arbitrary time used
 
+lon = np.linspace(0,360,40)
+lat = np.linspace(-90,90,20)
+
+
 lon_rad = np.radians(lon)
 lat_rad = np.radians(lat)
+
 
 # Need mesh grid for dimensions to work out for 3d plot
 lon_grid, lat_grid = np.meshgrid(lon_rad, lat_rad)
@@ -24,7 +31,7 @@ x = radius * np.cos(lat_grid) * np.cos(lon_grid)
 y = radius * np.cos(lat_grid) * np.sin(lon_grid)
 z = radius * np.sin(lat_grid)
 
-def gravity(x, y, z, lon, lat, lwe):
+def dgravity(x, y, z, lon, lat, lwe):
     r = 6371 
 
     lon_rad = np.arctan2(y, x)
@@ -43,10 +50,44 @@ def gravity(x, y, z, lon, lat, lwe):
     lwe_value = lwe[lat_index, lon_index]
     return lwe_value
 
+def mascon(lat_rad,lon_rad,x,y,z):
+    radius = 6371
+    Fx = 0
+    Fy = 0
+    Fz = 0
+    for i in lon_rad:
+        for j in lat_rad:
+            gravity_local = (0.5 + random.random())*1000
+            xcon = radius*np.cos(j)*np.cos(i)
+            ycon = radius*np.cos(j)*np.sin(i)
+            zcon = radius*np.sin(j)
+            rx = x-xcon
+            ry = y-ycon
+            rz = z-zcon
+            r = (rx**2+ry**2+rz**2)**0.5
+            if r != 0:
+                Fx = Fx + gravity_local*rx/r**3
+                Fy = Fy + gravity_local*ry/r**3
+                Fz = Fz + gravity_local*rz/r**3
+
+    F = (Fx**2+Fy**2+Fz**2)**0.5
+    print(F)
+    return F
+
+
+
+
+
+
+
 density = np.zeros((x.shape[0], x.shape[1]))
+count = 0
 for i in range(x.shape[0]):
     for j in range(x.shape[1]):
-        density[i, j] = gravity(x[i, j], y[i, j], z[i, j], lon, lat, lwe)
+        # density[i, j] = dgravity(x[i, j], y[i, j], z[i, j], lon, lat, lwe)
+        count = count + 1
+        # print(count)
+        density[i, j] = mascon(lon_rad, lat_rad, x[i, j], y[i, j], z[i, j])
 
 density_normalized = (density - np.min(density)) / (np.max(density) - np.min(density))
 
@@ -61,12 +102,13 @@ surf = ax.plot_surface(x, y, z, facecolors=colors, rstride=1, cstride=1, antiali
 # Color bar with lwe values from NASA data
 mappable = plt.cm.ScalarMappable(cmap=plt.cm.plasma)
 mappable.set_array(density) 
-fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=5, label='Gravity (m/s^2)')
+fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=5, label='Gravity')
 
-# Set axis labels and title
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
-ax.set_title('Mascon Gravity Model with Discrete LWE Boxes')
+ax.set_title('Mascon Gravity Model')
 
 plt.show()
+
+
