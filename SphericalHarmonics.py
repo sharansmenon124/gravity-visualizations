@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import csv
 
 # Gravity function to generate force magnitude from given cartesian coordinate
 def gravity(x,y,z):
@@ -43,12 +44,37 @@ mappable = plt.cm.ScalarMappable(cmap=plt.cm.plasma)
 mappable.set_array(density) 
 fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=5, label='Gravity (m/s^2)')
 
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Z')
-ax.set_title('Gravity Model up to J3')
+# ax.set_xlabel('X')
+# ax.set_ylabel('Y')
+# ax.set_zlabel('Z')
+# ax.set_title('Gravity Model up to J3')
 
-plt.show()
+# plt.show()
+
+position = []
+with open('sphere-positions.csv') as csv_file:
+    csv_reader = csv.reader(csv_file, delimiter=',')
+    line_count = 0
+    for row in csv_reader:
+        if line_count == 0:
+            line_count += 1
+        else:
+            position.append([row[0], row[1], row[2]])
+            line_count += 1
+    print(f'Processed {line_count} lines.')
+
+F = []
+data = []
+for pos in position:
+    data.append({'x': pos[0], 'y': pos[1], 'z': pos[2], 'F': gravity(float(pos[0]),float(pos[1]),float(pos[2]))})
+    F.append(gravity(float(pos[0]),float(pos[1]),float(pos[2])))
+
+import csv
 
 
 
+with open('sphere-positions&force.csv', 'w', newline='') as csvfile:
+    fieldnames = ['x', 'y', 'z', 'F']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(data)
