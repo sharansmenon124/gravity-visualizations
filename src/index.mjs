@@ -18,7 +18,7 @@ const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
-  1000
+  48000
 );
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -31,7 +31,7 @@ const light = new THREE.AmbientLight(0x404040, 20);
 scene.add(light);
 
 // color geometry
-const geometry1 = new THREE.SphereGeometry(100, 40, 40);
+const geometry1 = new THREE.SphereGeometry(6371, 40, 40);
 // geometry1.scale(1.0, 1, 1);
 
 const count = geometry1.attributes.position.count;
@@ -41,8 +41,6 @@ geometry1.setAttribute(
 );
 
 const positions1 = geometry1.attributes.position;
-
-const color = new THREE.Color();
 const colors1 = geometry1.attributes.color;
 
 let g_vals = [];
@@ -51,23 +49,23 @@ let y = [];
 let z = [];
 for (let i = 0; i < count; i++) {
   let g_value = gravity(
-    positions1.getX(i) * 63.71,
-    positions1.getY(i) * 63.71,
-    positions1.getZ(i) * 63.71
+    positions1.getX(i),
+    positions1.getY(i),
+    positions1.getZ(i)
   );
-  x.push(positions1.getX(i) * 63.71);
-  y.push(positions1.getY(i) * 63.71);
-  z.push(positions1.getZ(i) * 63.71);
+  x.push(positions1.getX(i));
+  y.push(positions1.getY(i));
+  z.push(positions1.getZ(i));
   g_vals.push(g_value);
 }
 console.log(g_vals);
 
 let normalized_g_vals = normalizeMinMax(g_vals);
-const colorScale = chroma.scale();
+const colorScale = chroma.scale(["red", "blue"]);
 console.log(normalized_g_vals.toString());
 for (let i = 0; i < count; i++) {
   const col = colorScale(normalized_g_vals[i]).rgb();
-  colors1.setXYZ(i, col[0], col[1], col[2]);
+  colors1.setXYZ(i, col[0] / 255, col[1] / 255, col[2] / 255);
 }
 
 const material = new THREE.MeshPhongMaterial({
@@ -94,7 +92,7 @@ let wireframe = new THREE.Mesh(
 
 scene.add(mesh);
 
-camera.position.z = 500;
+camera.position.z = 14500;
 
 async function animate() {
   controls.update();
